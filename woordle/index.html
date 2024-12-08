@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .info-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+            padding: 20px;
+            width: 80%;
+            background-color: #fff;
+        }
+        .info {
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-align: center;
+            /*color: #28a745;*/
+        }
+        details > summary {
+            cursor: pointer;
+        }
+        .clues-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .clue {
+            margin: 0 10px;
+            padding: 3px 0px 3px 3px;
+            letter-spacing: 10px;
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        .feedback {
+            color: red;
+        }
+        .wordle-container {
+            display: grid;
+            grid-template-rows: repeat(6, 60px);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .wordle-row {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .wordle-tile {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fff;
+            border: 2px solid #ddd;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .green {
+            background-color: #79a86b !important;	
+            color: white !important;
+        }
+        .yellow {
+            background-color: #c6b466 !important;
+            color: white !important;
+        }
+        .gray {
+            background-color: #797c7e !important;
+            color: white !important;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #79a86b;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        .keyboard {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 5px;
+        }
+        .key {
+            width: 40px;
+            height: 40px;
+            margin: 2px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #ddd;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .key:active {
+            background-color: #bbb;
+        }
+        .shake {
+            animation: shake 0.5s;
+            animation-iteration-count: 1;
+        }
+        @keyframes shake {
+            0% { transform: translateX(0) }
+            25% { transform: translateX(5px) }
+            50% { transform: translateX(-5px) }
+            75% { transform: translateX(5px) }
+            100% { transform: translateX(0) }
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-container">
+        <details open>
+            <summary class="info">Welcome to
+                <span class="gray">W</span><span class="green">O</span><span class="yellow">O</span><span class="gray">RDLE</span>!
+            </summary>
+            <div class="info">
+                <div>Woordle is just like Wordle, but you start with two clues.
+                   Each clue has exactly one letter in the correct position as the solution,
+                   and two letters in the incorrect position. Another way to think of this is
+                   that each clue word would have exactly one green and two yellow letters if
+                   played as a guess. However, you aren't allowed to directly use the starting
+                   clues as guesses. Other than that it's just like Wordle. Enjoy!</div>
+            </div>
+        </details>
+        <div class="clues-container">
+            <div>Clues:</div>
+            <div id="clue-1" class="clue"></div>
+            <div id="clue-2" class="clue"></div>
+        </div>
+        <div id="feedback" class="feedback"></div>
+    </div>
+    <div class="wordle-container">
+        <div id="wordle-row-0" class="wordle-row">
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+        </div>
+        <div id="wordle-row-1" class="wordle-row">
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+        </div>
+        <div id="wordle-row-2" class="wordle-row">
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+        </div>
+        <div id="wordle-row-3" class="wordle-row">
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+        </div>
+        <div id="wordle-row-4" class="wordle-row">
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+        </div>
+        <div id="wordle-row-5" class="wordle-row">
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+            <div class="wordle-tile"></div>
+        </div>
+    </div>
+    <div class="controls">
+        <button id="submit">Submit</button>
+        <button id="reset">Reset</button>
+    </div>
+    <div class="keyboard">
+        <div class="row">
+            <button id="Q" class="key">Q</button>
+            <button id="W" class="key">W</button>
+            <button id="E" class="key">E</button>
+            <button id="R" class="key">R</button>
+            <button id="T" class="key">T</button>
+            <button id="Y" class="key">Y</button>
+            <button id="U" class="key">U</button>
+            <button id="I" class="key">I</button>
+            <button id="O" class="key">O</button>
+            <button id="P" class="key">P</button>
+        </div>
+        <div class="row">
+            <button id="A" class="key">A</button>
+            <button id="S" class="key">S</button>
+            <button id="D" class="key">D</button>
+            <button id="F" class="key">F</button>
+            <button id="G" class="key">G</button>
+            <button id="H" class="key">H</button>
+            <button id="J" class="key">J</button>
+            <button id="K" class="key">K</button>
+            <button id="L" class="key">L</button>
+        </div>
+        <div class="row">
+            <button id="Z" class="key">Z</button>
+            <button id="X" class="key">X</button>
+            <button id="C" class="key">C</button>
+            <button id="V" class="key">V</button>
+            <button id="B" class="key">B</button>
+            <button id="N" class="key">N</button>
+            <button id="M" class="key">M</button>
+        </div>
+    </div>
+    <div id="reload-container" class="hidden">
+        <button id="reload" class="gray">Reload with random word</button>
+    </div>
+    <script type="module">
+        import init, { create_game, guess, is_valid } from "./woordle.js";
+
+        var game = null;  // Global variable to store the game state
+        const WORD_LENGTH = 5;
+        const MAX_GUESSES = 6;
+        const keyboard = document.querySelector(".keyboard");
+        let rowIndex = 0;
+        let nextInputIndex = 0;
+
+        init().then(() => {
+            const hash = window.location.hash;
+            const date = (new Date()).toLocaleDateString("en-US");  // Current date as M/D/Y
+            let seed = hash || date;
+            game = create_game(seed);
+            console.log(game.toJSON());
+
+            document.getElementById("clue-1").textContent = game.clue1.toUpperCase();
+            document.getElementById("clue-2").textContent = game.clue2.toUpperCase();
+        });
+
+        function tryWord() {
+            if (nextInputIndex !== WORD_LENGTH) {
+                return;
+            }
+            let wordleContainer = document.getElementById(`wordle-row-${rowIndex}`);
+            let word = "";
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                const wordleTile = wordleContainer.children[i];
+                word += wordleTile.textContent;
+            }
+            document.getElementById("feedback").textContent = "";
+            if (is_valid(word)) {
+                if (word == game.clue1.toUpperCase() || word == game.clue2.toUpperCase()) {
+                    wordleContainer.classList.add("shake");
+                    document.getElementById("feedback").textContent = "You can't guess a clue word! 👿🚫🤦";
+                    return;
+                }
+                applyGuessColors(word);
+
+                rowIndex++;
+                nextInputIndex = 0;
+
+                if (word == game.word.toUpperCase()) {
+                    document.getElementById("feedback").innerHTML = `
+                        <div style="color: #79a86b;">Congrats! You won! 🎉🥳😎</div>
+                    `;
+                    gameOver();
+                } else if (rowIndex === MAX_GUESSES) {
+                    document.getElementById("feedback").innerHTML = `
+                        <div>Oh no! You're out of guesses. 😭😱😤</div>
+                        <div>The word was: ${game.word.toUpperCase()}</div>
+                    `;
+                    gameOver();
+                }
+            } else {
+                wordleContainer.classList.add("shake");
+                document.getElementById("feedback").textContent = "That doesn't look like a real word... 🤔📖🤷";
+            }
+        }
+
+        function applyGuessColors(word) {
+            let feedback = guess(game.word.toUpperCase(), word).results;
+            let wordleContainer = document.getElementById(`wordle-row-${rowIndex}`);
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                const wordleTile = wordleContainer.children[i];
+                const letter = wordleTile.textContent;
+                const key = document.getElementById(letter);
+
+                if (feedback[i] === 2) {
+                    wordleTile.classList.add("green");
+                    key.classList.remove("gray", "yellow");
+                    key.classList.add("green");
+                } else if (feedback[i] === 1) {
+                    wordleTile.classList.add("yellow");
+                    if (!key.classList.contains("green")) {
+                        key.classList.remove("gray");
+                        key.classList.add("yellow");
+                    }
+                } else {
+                    wordleTile.classList.add("gray");
+                    if (!key.classList.contains("green") && !key.classList.contains("yellow")) {
+                        key.classList.add("gray");
+                    }
+                }
+            }
+        }
+
+        function gameOver() {
+            let reloadContainer = document.getElementById("reload-container");
+            reloadContainer.classList.remove("hidden");
+            rowIndex = MAX_GUESSES;  // To prevent further guesses
+        }
+
+        function unshake(e) {
+            e.target.classList.remove("shake");
+        }
+
+        function resetWord() {
+            let wordleContainer = document.getElementById(`wordle-row-${rowIndex}`);
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                const wordleTile = wordleContainer.children[i];
+                wordleTile.textContent = "";
+            }
+            nextInputIndex = 0;
+            // Otherwise "Enter" will trigger reset
+            document.getElementById("reset").blur();
+        }
+
+        function input(c) {
+            if (rowIndex === MAX_GUESSES || nextInputIndex === WORD_LENGTH) {
+                return;
+            }
+            let wordleContainer = document.getElementById(`wordle-row-${rowIndex}`);
+            const wordleTile = wordleContainer.children[nextInputIndex];
+            wordleTile.textContent = c.toUpperCase();
+            nextInputIndex++;
+        }
+
+        function reload() {
+            // By default, updating the hash won't relaod the page
+            window.onhashchange = function() {
+                location.reload();
+            };
+
+            let url = window.location.href;
+            if (window.location.hash) {
+                url = url.split("#")[0];
+            }
+            url += "#" + getRandomSeed();
+            window.location.href = url;
+        }
+
+        function getRandomSeed() {
+            let n = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+            return n.toString(16);
+        }
+
+        document.getElementById("submit").addEventListener("click", tryWord);
+        document.getElementById("reset").addEventListener("click", resetWord);
+        document.getElementById("reload").addEventListener("click", reload);
+
+        keyboard.addEventListener("click", (e) => {
+            if (e.target.tagName === "BUTTON") {
+                input(e.target.textContent);
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            let wordleContainer = document.getElementById(`wordle-row-${rowIndex}`);
+            if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
+                input(e.key);
+            } else if (e.key === "Backspace" && nextInputIndex > 0) {
+                nextInputIndex--;
+                const wordleTile = wordleContainer.children[nextInputIndex];
+                wordleTile.textContent = "";
+            } else if (e.key === "Enter") {
+                tryWord();
+            }
+        });
+
+        for (let i = 0; i < MAX_GUESSES; i++) {
+            document.getElementById(`wordle-row-${rowIndex}`).addEventListener('animationend', unshake);
+        }
+    </script>
+</body>
+</html>
