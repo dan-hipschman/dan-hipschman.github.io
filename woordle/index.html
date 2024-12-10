@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wordle Game</title>
+    <title>Woordle</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -254,6 +254,7 @@
         import init, { create_game, guess, is_valid } from "./woordle.js";
 
         var game = null;  // Global variable to store the game state
+        var seed = "";  // Used for localstorage
         const WORD_LENGTH = 5;
         const MAX_GUESSES = 6;
         const keyboard = document.querySelector(".keyboard");
@@ -263,13 +264,55 @@
         init().then(() => {
             const hash = window.location.hash;
             const date = (new Date()).toLocaleDateString("en-US");  // Current date as M/D/Y
-            let seed = hash || date;
+            seed = hash || date;
             game = create_game(seed);
-            console.log(game.toJSON());
 
             document.getElementById("clue-1").textContent = game.clue1.toUpperCase();
             document.getElementById("clue-2").textContent = game.clue2.toUpperCase();
+
+            let state = window.localStorage.getItem(`woordle/${seed}`);
+            if (state) {
+                state = JSON.parse(state);
+                rowIndex = 0;
+                for (let i = 0; i < state.guesses.length; i++) {
+                    let wordleContainer = document.getElementById(`wordle-row-${i}`);
+                    nextInputIndex = state.guesses[i].length;
+                    for (let j = 0; j < state.guesses[i].length; j++) {
+                        const wordleTile = wordleContainer.children[j];
+                        wordleTile.textContent = state.guesses[i][j];
+                    }
+                    if (rowIndex < state.rowIndex) {
+                        applyGuessColors(state.guesses[i]);
+                        rowIndex++;
+                        nextInputIndex = 0;
+                    }
+                }
+                rowIndex = state.rowIndex;  // Needed to restore won game
+                if (rowIndex === MAX_GUESSES) {
+                    gameOver();
+                }
+            }
         });
+
+        function updateState() {
+            let guesses = [];
+            for (let i = 0; i < Math.min(rowIndex + 1, MAX_GUESSES); i++) {
+                let guess = "";
+                let wordleContainer = document.getElementById(`wordle-row-${i}`);
+                for (let j = 0; j < WORD_LENGTH; j++) {
+                    const wordleTile = wordleContainer.children[j];
+                    guess += wordleTile.textContent;
+                }
+                if (guess) {
+                    guesses.push(guess);
+                }
+            }
+            let state = {
+                rowIndex,
+                guesses: guesses,
+            };
+            window.localStorage.setItem(`woordle/${seed}`, JSON.stringify(state));
+        }
 
         function tryWord() {
             if (nextInputIndex !== WORD_LENGTH) {
@@ -292,6 +335,7 @@
 
                 rowIndex++;
                 nextInputIndex = 0;
+                updateState();
 
                 if (word == game.word.toUpperCase()) {
                     document.getElementById("feedback").innerHTML = `
@@ -342,6 +386,7 @@
             let reloadContainer = document.getElementById("reload-container");
             reloadContainer.classList.remove("hidden");
             rowIndex = MAX_GUESSES;  // To prevent further guesses
+            updateState();
         }
 
         function unshake(e) {
@@ -357,6 +402,7 @@
             nextInputIndex = 0;
             // Otherwise "Enter" will trigger reset
             document.getElementById("reset").blur();
+            updateState();
         }
 
         function input(c) {
@@ -367,6 +413,7 @@
             const wordleTile = wordleContainer.children[nextInputIndex];
             wordleTile.textContent = c.toUpperCase();
             nextInputIndex++;
+            updateState();
         }
 
         function reload() {
@@ -400,12 +447,13 @@
 
         document.addEventListener("keydown", (e) => {
             let wordleContainer = document.getElementById(`wordle-row-${rowIndex}`);
-            if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
+            if (e.key.length === 1 && e.key.match(/[a-z]/i) && !e.metaKey && !e.ctrlKey) {
                 input(e.key);
             } else if (e.key === "Backspace" && nextInputIndex > 0) {
                 nextInputIndex--;
                 const wordleTile = wordleContainer.children[nextInputIndex];
                 wordleTile.textContent = "";
+                updateState();
             } else if (e.key === "Enter") {
                 tryWord();
             }
